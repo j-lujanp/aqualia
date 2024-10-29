@@ -1,0 +1,17 @@
+{
+  "domain": "aqualia",
+  "name": "aqualia",
+  "version": "0.1.0",
+  "codeowners": [
+    "@j-lujanp"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://www.home-assistant.io/integrations/aqualia",
+  "homekit": {},
+  "iot_class": "cloud_polling",
+  "requirements": ["aiohttp"],
+  "ssdp": [],
+  "zeroconf": [],
+  "loggers":["custom_components.aqualia"]
+}

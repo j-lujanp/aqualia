@@ -1,0 +1,5 @@
+reset_statistics:
+  target:
+    entity:
+      integration: aqualia
+      domain: sensor
