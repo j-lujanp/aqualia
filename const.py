@@ -21,6 +21,8 @@ MODEL_TOKEN="Token"
 MODEL_TOKEN_EXPIRATION_DATE="TokenExpirationDate"
 MODEL_CONSUMPTION_CURVES="ConsumptionCurves"
 
+TOTAL_CONSUMPTION_SUM="TotalConsumptionSum"
+
 SERVICE_RESET_STATISTICS="reset_statistics"
 
 #Statistics

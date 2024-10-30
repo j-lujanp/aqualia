@@ -60,7 +60,7 @@ def prepare_data(
                 "start": last_update_dt,
                 "state": 0,
                 "sum": last_consumption,
-                "last_reset": last_update_dt-timedelta(hours=1)
+                "last_reset": last_update_dt
             }
         )
         consumption = record[const.MODEL_CONSUMPTION_VALUE]
@@ -71,9 +71,10 @@ def prepare_data(
                 "start": record_dt,
                 "state": consumption,
                 "sum": consumption_sum,
-                "last_reset": record_dt-timedelta(hours=1)
+                "last_reset": record_dt
             }
         )
+    last_reported_update = last_update_dt
     now=datetime.now().replace(minute=0, second=0, tzinfo=timezone)
     while (now-last_update_dt).total_seconds()>3600: #We fill the gaps between records
             last_update_dt=last_update_dt+timedelta(hours=1)
@@ -82,7 +83,7 @@ def prepare_data(
                 "start": last_update_dt,
                 "state": 0,
                 "sum": last_consumption,
-                "last_reset": last_update_dt-timedelta(hours=1)
+                "last_reset": last_update_dt
             }
         )
-    return stats
+    return stats, last_consumption, last_reported_update

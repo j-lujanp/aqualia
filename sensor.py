@@ -38,7 +38,7 @@ from . import const
 from .aqualia_api import AqualiaAPI
 from .util import prepare_data
 
-SCAN_INTERVAL = timedelta(hours=4)
+SCAN_INTERVAL = timedelta(minutes=1)
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
@@ -79,9 +79,11 @@ class Consumption(SensorEntity):
         self.api = my_api
         self._last_consumption_datetime = None
         self._last_consumption_value = 0
+        self._last_consumption_sum = 0
         self.attrs: dict[str, Any]= {const.MODEL_ENTRY_DATE:self.contract[const.MODEL_ENTRY_DATE]}
         self.attrs[const.MODEL_DATE_TIME_CONSUMPTION_CURVE]=self.last_consumption_datetime
         self.attrs[const.MODEL_CONSUMPTION_VALUE]=self._last_consumption_value
+        self.attrs[const.TOTAL_CONSUMPTION_SUM]=self._last_consumption_sum
         for key in list(self.contract[const.MODEL_CONTRACT_INFO]):
             self.attrs[key]=self.contract[const.MODEL_CONTRACT_INFO][key]
 
@@ -131,7 +133,7 @@ class Consumption(SensorEntity):
         last_update=datetime.strptime(self.contract[const.MODEL_ENTRY_DATE],"%d/%m/%Y %H:%M:%S")
         consumption = await self.api.get_consumption(self.contract,last_update)
         if len(consumption[const.MODEL_CONSUMPTION_CURVES]) > 0:
-            stats = prepare_data(
+            stats, consumption_sum, last_reported_update = prepare_data(
                 self.entity_id,
                 self._attr_native_unit_of_measurement,
                 consumption[const.MODEL_CONSUMPTION_CURVES],
@@ -140,18 +142,25 @@ class Consumption(SensorEntity):
                 )
             metadata = stats[const.STATS_METADATA]
             async_import_statistics(self.hass, metadata, stats[const.STATS_STATISTICS])
+            self._last_consumption_value = consumption[const.MODEL_CONSUMPTION_CURVES][-1][const.MODEL_CONSUMPTION_VALUE]
+            self._state = self._last_consumption_value
+            self.attrs[const.MODEL_CONSUMPTION_VALUE]=self._last_consumption_value
+            self._last_consumption_sum = consumption_sum
+            self.attrs[const.TOTAL_CONSUMPTION_SUM]=self._last_consumption_sum
+            self._last_consumption_datetime = last_reported_update
+            self.attrs[const.MODEL_DATE_TIME_CONSUMPTION_CURVE]=self._last_consumption_datetime
+            self.last_reset=self._last_consumption_datetime
 
     # https://github.com/klausj1/homeassistant-statistics/blob/main/custom_components/import_statistics/prepare_data.py#L22
     async def async_update(self) -> None:
         """Update the value of the entity."""
-        if self._last_consumption_datetime is not None:
-            last_update=datetime.strptime(self._last_consumption_datetime,"%Y-%m-%dT%H:%M:%S")
-            self._state=0
+        if self.last_consumption_datetime is not None:
+            last_update=self.last_consumption_datetime
         else:
             last_update=datetime.strptime(self.contract[const.MODEL_ENTRY_DATE],"%d/%m/%Y %H:%M:%S")
         consumption = await self.api.get_consumption(self.contract,last_update)
         if len(consumption[const.MODEL_CONSUMPTION_CURVES]) > 0:
-            stats = prepare_data(
+            stats, consumption_sum, last_reported_update = prepare_data(
                 self.entity_id,
                 self._attr_native_unit_of_measurement,
                 consumption[const.MODEL_CONSUMPTION_CURVES],
@@ -160,8 +169,15 @@ class Consumption(SensorEntity):
                 )
             metadata = stats[const.STATS_METADATA]
             async_import_statistics(self.hass, metadata, stats[const.STATS_STATISTICS])
-            self._state = consumption[const.MODEL_CONSUMPTION_CURVES][-1][const.MODEL_CONSUMPTION_VALUE]
-            self._last_consumption_datetime = consumption[const.MODEL_CONSUMPTION_CURVES][-1][const.MODEL_DATE_TIME_CONSUMPTION_CURVE]
             self._last_consumption_value = consumption[const.MODEL_CONSUMPTION_CURVES][-1][const.MODEL_CONSUMPTION_VALUE]
-            self.attrs[const.MODEL_DATE_TIME_CONSUMPTION_CURVE]=consumption[const.MODEL_CONSUMPTION_CURVES][-1][const.MODEL_DATE_TIME_CONSUMPTION_CURVE]
+            self._state = self._last_consumption_value
+            self.attrs[const.MODEL_CONSUMPTION_VALUE]=self._last_consumption_value
+            self._last_consumption_sum = consumption_sum
+            self.attrs[const.TOTAL_CONSUMPTION_SUM]=self._last_consumption_sum
+            self._last_consumption_datetime = last_reported_update
+            self.attrs[const.MODEL_DATE_TIME_CONSUMPTION_CURVE]=self.last_consumption_datetime
+            self.last_reset=self.last_consumption_datetime
+        else:
+            self._state = 0
+            self.last_reset = self.last_consumption_datetime
         self._available = True

@@ -29,7 +29,7 @@ class AqualiaAPI:
 
     async def login(self) ->bool:
         """Get the bearer token if there is no valid one."""
-        #return True #for testing
+        return True #for testing
         if self.token == '' or self.token_expiration_date < datetime.now():
             data = {
                 "LoginType": 1,
@@ -51,7 +51,7 @@ class AqualiaAPI:
 
     async def get_contracts(self)->list:
         """Get the contracts for the authenticated user."""
-        #return json.loads(const.FAKE_CONTRACTS)[const.MODEL_CONTRACT_DETAILS] #For testing only
+        return json.loads(const.FAKE_CONTRACTS)[const.MODEL_CONTRACT_DETAILS] #For testing only
         bool_response = await self.login()
         if bool_response:
             url=f'{const.AQUALIA_API_BASE_URL}/{const.AQUALIA_CONTRACTS_PATH}'
@@ -66,7 +66,7 @@ class AqualiaAPI:
 
     async def get_consumption(self,contract,date_from=None) ->dict:
         """Get the consumption from a date until now."""
-        #return json.loads(const.FAKE_CONSUMPTION) #For testing only
+        return json.loads(const.FAKE_CONSUMPTION) #For testing only
         if await self.login():
             data={
                 "DateFrom":date_from.strftime("%Y-%m-%dT00:00:00.000Z"),
